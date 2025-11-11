@@ -8,6 +8,7 @@ import { Badge } from '../../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '../../components/ui/alert';
 import { employeeService } from '../../services/authService';
+import { AddressForm } from '../../components/AddressForm';
 
 interface TelefoneFormData {
   id?: string;
@@ -79,6 +80,7 @@ export default function FormColaborador() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [countryCodes, setCountryCodes] = useState<CountryCode[]>([]);
+  const [brazilianStates, setBrazilianStates] = useState<Array<{ code: string; name: string }>>([]);
   const [isColaboradorInativoParaEdicao, setIsColaboradorInativoParaEdicao] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
@@ -183,6 +185,14 @@ export default function FormColaborador() {
       })
       .catch(err => {
         console.error("Erro ao buscar códigos de país:", err);
+      });
+
+    employeeService.getBrazilianStates()
+      .then(response => {
+        setBrazilianStates(response.states || []);
+      })
+      .catch(err => {
+        console.error("Erro ao buscar estados brasileiros:", err);
       });
   }, []);
 
@@ -567,9 +577,28 @@ export default function FormColaborador() {
                           name="crmv_number"
                           value={formData.crmv_number || ''}
                           onChange={handleChange}
-                          placeholder="Ex: CRMV-SP 12345"
+                          placeholder="Ex: 12345"
                           disabled={disableFormFields}
                       />
+                   </div>
+                   <div>
+                      <label htmlFor="crmv_state" className="text-sm font-medium block mb-1">UF do CRMV</label>
+                      <Select
+                        value={formData.crmv_state || ''}
+                        onValueChange={(value) => handleChange({ target: { name: 'crmv_state', value } } as any)}
+                        disabled={disableFormFields}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a UF" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {brazilianStates.map((state) => (
+                            <SelectItem key={state.code} value={state.code}>
+                              {state.code} - {state.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                    </div>
                 </div>
               )}
@@ -580,89 +609,23 @@ export default function FormColaborador() {
             <CardHeader>
               <CardTitle>Endereço</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="zip_code" className="text-sm font-medium block mb-1">CEP</label>
-                <Input
-                  id="zip_code"
-                  name="zip_code"
-                  value={formatCEP(formData.zip_code)}
-                  onChange={handleChange}
-                  maxLength={9}
-                  disabled={disableFormFields}
-                />
-              </div>
-              <div>
-                <label htmlFor="country" className="text-sm font-medium block mb-1">País</label>
-                <Input
-                  id="country"
-                  name="country"
-                  value={formData.country}
-                  onChange={handleChange}
-                  disabled={disableFormFields}
-                />
-              </div>
-              <div>
-                <label htmlFor="street" className="text-sm font-medium block mb-1">Logradouro</label>
-                <Input
-                  id="street"
-                  name="street"
-                  value={formData.street}
-                  onChange={handleChange}
-                  disabled={disableFormFields}
-                />
-              </div>
-              <div>
-                <label htmlFor="address_number" className="text-sm font-medium block mb-1">Número</label>
-                <Input
-                  id="address_number"
-                  name="address_number"
-                  value={formData.address_number}
-                  onChange={handleChange}
-                  disabled={disableFormFields}
-                />
-              </div>
-              <div>
-                <label htmlFor="address_complement" className="text-sm font-medium block mb-1">Complemento</label>
-                <Input
-                  id="address_complement"
-                  name="address_complement"
-                  value={formData.address_complement || ''}
-                  onChange={handleChange}
-                  disabled={disableFormFields}
-                />
-              </div>
-              <div>
-                <label htmlFor="neighborhood" className="text-sm font-medium block mb-1">Bairro</label>
-                <Input
-                  id="neighborhood"
-                  name="neighborhood"
-                  value={formData.neighborhood}
-                  onChange={handleChange}
-                  disabled={disableFormFields}
-                />
-              </div>
-              <div>
-                <label htmlFor="city" className="text-sm font-medium block mb-1">Cidade</label>
-                <Input
-                  id="city"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleChange}
-                  disabled={disableFormFields}
-                />
-              </div>
-              <div>
-                <label htmlFor="state" className="text-sm font-medium block mb-1">Estado (UF)</label>
-                <Input
-                  id="state"
-                  name="state"
-                  value={formData.state}
-                  onChange={handleChange}
-                  maxLength={2}
-                  disabled={disableFormFields}
-                />
-              </div>
+            <CardContent>
+              <AddressForm
+                data={{
+                  zip_code: formData.zip_code,
+                  country: formData.country,
+                  street: formData.street,
+                  address_number: formData.address_number,
+                  address_complement: formData.address_complement,
+                  neighborhood: formData.neighborhood,
+                  city: formData.city,
+                  state: formData.state
+                }}
+                onChange={(field, value) => {
+                  setFormData(prev => ({ ...prev, [field]: value }));
+                }}
+                disabled={disableFormFields}
+              />
             </CardContent>
           </Card>
 

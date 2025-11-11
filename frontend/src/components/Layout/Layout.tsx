@@ -4,7 +4,7 @@ import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
 import { Switch } from '../ui/switch';
 import { useTheme } from '../../contexts/ThemeContext';
-import { authService } from '../../services/authService';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   LayoutDashboard,
   Users,
@@ -47,7 +47,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
-  const currentUser = authService.getCurrentUser();
+  const { user: currentUser, logout } = useAuth();
 
   React.useEffect(() => {
     let agenciaData: Agencia = mockData.mockAgencia;
@@ -75,7 +75,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, [location]); // Re-executar no carregamento inicial e talvez em mudança de rota se necessário
 
   const handleLogout = () => {
-    authService.logout();
+    logout();
   };
 
   const getRoleLabel = (role: string) => {
@@ -137,8 +137,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
-                {currentUser.email}
+                {currentUser.name || currentUser.email}
               </p>
+              {currentUser.name && (
+                <p className="text-xs text-muted-foreground truncate">
+                  {currentUser.email}
+                </p>
+              )}
               <span className={cn(
                 "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mt-1",
                 getRoleBadgeColor(currentUser.role)

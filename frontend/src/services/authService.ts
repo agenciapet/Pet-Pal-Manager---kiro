@@ -2,6 +2,18 @@ import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:3000/api';
 
+export interface LoginResponse {
+  message: string;
+  token: string;
+  user: {
+    id: string;
+    email: string;
+    role: string;
+  };
+}
+
+
+
 // Configurar axios com interceptors
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -32,31 +44,19 @@ api.interceptors.response.use(
       const { status, data } = error.response;
       // Tratar token expirado ou inválido (401 ou 403 com mensagem específica)
       if (status === 401 || (status === 403 && data?.message === 'Token inválido')) {
-        alert('Sua sessão expirou ou o token é inválido. Você será redirecionado para o login.');
-        // Chamar a função de logout para limpar o localStorage e redirecionar
-        authService.logout(); // Certifique-se que authService está acessível aqui ou mova a lógica de logout para cá
-        return Promise.reject(error); // Rejeitar para evitar processamento adicional
+        // Limpar dados locais
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        // Redirecionar para login
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+        return Promise.reject(error);
       }
     }
     return Promise.reject(error);
   }
 );
-
-export interface LoginResponse {
-  message: string;
-  token: string;
-  user: {
-    id: string;
-    email: string;
-    role: string;
-  };
-}
-
-export interface User {
-  id: string;
-  email: string;
-  role: string;
-}
 
 export const authService = {
   async login(email: string, password: string): Promise<LoginResponse> {
@@ -64,12 +64,22 @@ export const authService = {
     return response.data;
   },
 
-  async register(email: string, password: string, role?: string): Promise<LoginResponse> {
-    const response = await api.post('/auth/register', { email, password, role });
+  async register(email: string, password: string, role?: string, name?: string): Promise<LoginResponse> {
+    const response = await api.post('/auth/register', { name, email, password, role });
     return response.data;
   },
 
-  async getProfile(): Promise<{ user: User }> {
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const response = await api.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+    const response = await api.post('/auth/reset-password', { token, newPassword });
+    return response.data;
+  },
+
+  async getProfile(): Promise<{ user: any }> {
     const response = await api.get('/auth/profile');
     return response.data;
   },
@@ -80,7 +90,7 @@ export const authService = {
     window.location.href = '/login';
   },
 
-  getCurrentUser(): User | null {
+  getCurrentUser(): any | null {
     const userStr = localStorage.getItem('user');
     return userStr ? JSON.parse(userStr) : null;
   },
@@ -135,7 +145,66 @@ export const employeeService = {
   async getCountryCodes(): Promise<{ countries: Array<{ id: number; name: string; country_iso_code: string; dial_code: string; flag_emoji: string }> }> {
     const response = await api.get('/utils/country-codes');
     return response.data;
+  },
+
+  // Função para buscar estados brasileiros
+  async getBrazilianStates(): Promise<{ states: Array<{ code: string; name: string }> }> {
+    const response = await api.get('/utils/brazilian-states');
+    return response.data;
+  },
+
+  // Função para buscar países
+  async getCountries(): Promise<{ countries: Array<{ code: string; name: string; flag: string; default?: boolean }> }> {
+    const response = await api.get('/utils/countries');
+    return response.data;
+  },
+
+  // Função para buscar endereço por CEP
+  async getAddressByCep(cep: string): Promise<{ address: { cep: string; street: string; neighborhood: string; city: string; state: string; country: string; country_code: string } }> {
+    const response = await api.get(`/utils/address/${cep}`);
+    return response.data;
   }
 };
 
-export { api }; 
+// Serviço para gerenciar clientes/empresas
+export const clientService = {
+  async getAllClients(status: string = 'active'): Promise<{ companies: any[] }> {
+    const response = await api.get('/companies', { params: { status } });
+    return response.data;
+  },
+
+  async getClientById(id: string): Promise<{ company: any }> {
+    const response = await api.get(`/companies/${id}`);
+    return response.data;
+  },
+
+  async createClient(clientData: any): Promise<{ message: string; company: any }> {
+    const response = await api.post('/companies', clientData);
+    return response.data;
+  },
+
+  async updateClient(id: string, clientData: any): Promise<{ message: string; company: any }> {
+    const response = await api.put(`/companies/${id}`, clientData);
+    return response.data;
+  },
+
+  async inactivateClient(id: string): Promise<{ message: string; company: any }> {
+    const response = await api.delete(`/companies/${id}`);
+    return response.data;
+  }
+};
+
+// Serviço para gerenciar serviços
+export const servicesService = {
+  async getAllServices(status: string = 'active'): Promise<{ services: any[] }> {
+    const response = await api.get('/services', { params: { status } });
+    return response.data;
+  },
+
+  async getServiceById(id: string): Promise<{ service: any }> {
+    const response = await api.get(`/services/${id}`);
+    return response.data;
+  }
+};
+
+export { api };

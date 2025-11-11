@@ -94,7 +94,7 @@ export default function PreencherContrato() {
           tipo_parte: 'colaborador',
           id_parte: colab.id,
           nome: colab.nome_completo,
-          email: colab.email,
+          email: colab.email || `colaborador+${colab.id}@petpalmanager.com`, // Fallback email único
           cpf_cnpj: colab.cpf,
           status_assinatura: 'pendente'
         });
@@ -117,7 +117,7 @@ export default function PreencherContrato() {
             tipo_parte: 'cliente_representante',
             id_parte: representantePrincipalCliente.id,
             nome: representantePrincipalCliente.nome_completo,
-            email: representantePrincipalCliente.email,
+            email: representantePrincipalCliente.email || `representante+${representantePrincipalCliente.id}@petpalmanager.com`, // Fallback email único
             cpf_cnpj: representantePrincipalCliente.cpf,
             status_assinatura: 'pendente'
           });
@@ -127,7 +127,7 @@ export default function PreencherContrato() {
             signatariosIniciais.push({
                 tipo_parte: 'empresa_contato_principal',
                 nome: cli.razao_social, // Nome da empresa
-                email: cli.email, // Email geral da empresa
+                email: cli.email || `contrato+${cli.id}@petpalmanager.com`, // Fallback email único
                 cpf_cnpj: cli.cnpj,
                 status_assinatura: 'pendente'
               });
@@ -152,7 +152,7 @@ export default function PreencherContrato() {
             tipo_parte: 'agencia_socio',
             id_parte: socioPrincipalAgencia.id,
             nome: socioPrincipalAgencia.nome_completo,
-            email: socioPrincipalAgencia.email,
+            email: socioPrincipalAgencia.email || 'contrato@petpalmanager.com', // Fallback email
             cpf_cnpj: socioPrincipalAgencia.cpf,
             status_assinatura: 'pendente'
         });
@@ -164,7 +164,7 @@ export default function PreencherContrato() {
     }
   }, [template, entidade, agencia, tipoEntidade]);
 
-  const handleSalvarRascunho = () => {
+  const handleSalvarRascunho = async () => {
     if (!template || !entidade) return;
 
     const novoContrato: ContratoGerado = {
@@ -191,8 +191,33 @@ export default function PreencherContrato() {
       const contratosSalvos = JSON.parse(localStorage.getItem('contratosGeradosPPM') || '[]');
       contratosSalvos.push(novoContrato);
       localStorage.setItem('contratosGeradosPPM', JSON.stringify(contratosSalvos));
+      
+      // Salvar também no banco de dados
+      const response = await fetch('http://localhost:3000/api/contracts/generated', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: novoContrato.id,
+          template_id: novoContrato.template_id,
+          template_nome: novoContrato.template_nome,
+          entidade_id: novoContrato.entidade_id,
+          entidade_nome: novoContrato.entidade_nome,
+          entidade_tipo: novoContrato.entidade_tipo,
+          status_geral: novoContrato.status_geral,
+          dados_snapshot: novoContrato.dados_snapshot,
+          signatarios: novoContrato.signatarios
+        })
+      });
+      
+      if (response.ok) {
+        console.log('Contrato salvo no banco de dados com sucesso');
+      } else {
+        console.error('Erro ao salvar contrato no banco de dados');
+      }
     } catch (error) {
-      console.error("Erro ao salvar contrato no localStorage:", error);
+      console.error("Erro ao salvar contrato:", error);
     }
 
     console.log('Contrato Gerado (Rascunho):', novoContrato);

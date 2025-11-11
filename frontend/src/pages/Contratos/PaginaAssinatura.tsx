@@ -49,6 +49,7 @@ export default function PaginaAssinatura() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [nomeAssinante, setNomeAssinante] = useState('');
+    const [cpfAssinante, setCpfAssinante] = useState('');
     const [aceiteTermos, setAceiteTermos] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [agenciaNome, setAgenciaNome] = useState('');
@@ -152,9 +153,9 @@ export default function PaginaAssinatura() {
 
     }, [tokenSignatario]);
 
-    const handleAssinar = () => {
-        if (!contrato || !signatario || !aceiteTermos || !nomeAssinante.trim()) {
-            alert("Por favor, confirme seu nome completo e aceite os termos para assinar.");
+    const handleAssinar = async () => {
+        if (!contrato || !signatario || !aceiteTermos || !nomeAssinante.trim() || !cpfAssinante.trim()) {
+            alert("Por favor, confirme seu nome completo, CPF e aceite os termos para assinar.");
             return;
         }
         setIsSubmitting(true);
@@ -185,6 +186,7 @@ export default function PaginaAssinatura() {
                 user_agent: navigator.userAgent,
                 data_assinatura_cliente: new Date().toISOString(), // Data/hora do cliente no momento da assinatura
                 nome_confirmado: nomeAssinante,
+                cpf_confirmado: cpfAssinante,
             };
             // Poderia adicionar aqui o nome digitado se for diferente, ou IP, etc.
             // contratosSalvos[contratoIndex].signatarios[signatarioIndex].nome_confirmado = nomeAssinante;
@@ -203,12 +205,35 @@ export default function PaginaAssinatura() {
 
             localStorage.setItem('contratosGeradosPPM', JSON.stringify(contratosSalvos));
             
+            // Salvar também no banco de dados
+            try {
+                const response = await fetch(`http://localhost:3000/api/contracts/generated/${contrato.id}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        status_geral: todosAssinaram ? 'assinado' : 'parcialmente_assinado',
+                        signatarios: contratosSalvos[contratoIndex].signatarios
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log('Status do contrato atualizado no banco de dados');
+                } else {
+                    console.error('Erro ao atualizar status no banco de dados');
+                }
+            } catch (error) {
+                console.error('Erro ao comunicar com o banco de dados:', error);
+            }
+            
             // Atualiza o estado local para refletir a mudança imediatamente
             const dadosAuditoriaLocal = {
                 ip_simulado: '192.168.1.1 (simulado)',
                 user_agent: navigator.userAgent,
                 data_assinatura_cliente: new Date().toISOString(),
                 nome_confirmado: nomeAssinante,
+                cpf_confirmado: cpfAssinante,
             };
 
             setSignatario(prev => prev ? {...prev, status_assinatura: 'assinado', data_assinatura: new Date().toISOString(), dadosAuditoria: dadosAuditoriaLocal} : null);
@@ -299,6 +324,18 @@ export default function PaginaAssinatura() {
                                     disabled={isSubmitting}
                                 />
                             </div>
+                            <div className="mb-4">
+                                <label htmlFor="cpfAssinante" className="block text-sm font-medium text-gray-700 mb-1">Seu CPF:</label>
+                                <input 
+                                    type="text"
+                                    id="cpfAssinante"
+                                    value={cpfAssinante}
+                                    onChange={(e) => setCpfAssinante(e.target.value)}
+                                    placeholder="000.000.000-00"
+                                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
+                                    disabled={isSubmitting}
+                                />
+                            </div>
                             <div className="flex items-start mb-4">
                                 <input 
                                     id="aceiteTermos"
@@ -330,7 +367,7 @@ export default function PaginaAssinatura() {
                     <CardFooter className="bg-gray-50 border-t p-4 md:p-6 flex flex-col items-center">
                         <Button 
                             onClick={handleAssinar} 
-                            disabled={!aceiteTermos || !nomeAssinante.trim() || isSubmitting}
+                            disabled={!aceiteTermos || !nomeAssinante.trim() || !cpfAssinante.trim() || isSubmitting}
                             className="w-full max-w-xs text-base py-3"
                             size="lg"
                         >

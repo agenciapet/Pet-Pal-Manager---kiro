@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { mockAgencia } from '../../data/mockData';
 import type { Agencia as AgenciaType } from '../../data/mockData';
+import { employeeService } from '../../services/authService';
+import { AddressForm } from '../../components/AddressForm';
 
 interface FormSocio {
   nome_completo: string;
@@ -81,6 +84,19 @@ export default function EditarAgencia() {
     logo_url: initialAgenciaData.logo_url || '',
     favicon_url: initialAgenciaData.favicon_url || ''
   });
+
+  const [brazilianStates, setBrazilianStates] = useState<Array<{ code: string; name: string }>>([]);
+
+  useEffect(() => {
+    // Buscar estados brasileiros
+    employeeService.getBrazilianStates()
+      .then(response => {
+        setBrazilianStates(response.states || []);
+      })
+      .catch(err => {
+        console.error("Erro ao buscar estados brasileiros:", err);
+      });
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -289,90 +305,35 @@ export default function EditarAgencia() {
           <CardHeader>
             <CardTitle>Endereço</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium">CEP</label>
-              <Input
-                value={formData.endereco.cep}
-                onChange={(e) => setFormData({ 
-                  ...formData, 
-                  endereco: { ...formData.endereco, cep: formatCEP(e.target.value) }
-                })}
-                maxLength={9}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Logradouro</label>
-              <Input
-                value={formData.endereco.logradouro}
-                onChange={(e) => setFormData({ 
-                  ...formData, 
-                  endereco: { ...formData.endereco, logradouro: e.target.value }
-                })}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Número</label>
-              <Input
-                value={formData.endereco.numero}
-                onChange={(e) => setFormData({ 
-                  ...formData, 
-                  endereco: { ...formData.endereco, numero: e.target.value }
-                })}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Complemento</label>
-              <Input
-                value={formData.endereco.complemento}
-                onChange={(e) => setFormData({ 
-                  ...formData, 
-                  endereco: { ...formData.endereco, complemento: e.target.value }
-                })}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Bairro</label>
-              <Input
-                value={formData.endereco.bairro}
-                onChange={(e) => setFormData({ 
-                  ...formData, 
-                  endereco: { ...formData.endereco, bairro: e.target.value }
-                })}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Cidade</label>
-              <Input
-                value={formData.endereco.cidade}
-                onChange={(e) => setFormData({ 
-                  ...formData, 
-                  endereco: { ...formData.endereco, cidade: e.target.value }
-                })}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Estado</label>
-              <Input
-                value={formData.endereco.estado}
-                onChange={(e) => setFormData({ 
-                  ...formData, 
-                  endereco: { ...formData.endereco, estado: e.target.value }
-                })}
-                maxLength={2}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">País</label>
-              <Input
-                value={formData.endereco.pais}
-                onChange={(e) => setFormData({ 
-                  ...formData, 
-                  endereco: { ...formData.endereco, pais: e.target.value }
-                })}
-                maxLength={2}
-              />
-            </div>
+          <CardContent>
+            <AddressForm
+              data={{
+                zip_code: formData.endereco.cep,
+                country: formData.endereco.pais,
+                street: formData.endereco.logradouro,
+                address_number: formData.endereco.numero,
+                address_complement: formData.endereco.complemento,
+                neighborhood: formData.endereco.bairro,
+                city: formData.endereco.cidade,
+                state: formData.endereco.estado
+              }}
+              onChange={(field, value) => {
+                const fieldMapping: Record<string, string> = {
+                  zip_code: 'cep',
+                  country: 'pais',
+                  street: 'logradouro',
+                  address_number: 'numero',
+                  address_complement: 'complemento',
+                  neighborhood: 'bairro',
+                  city: 'cidade',
+                  state: 'estado'
+                };
+                setFormData({
+                  ...formData,
+                  endereco: { ...formData.endereco, [fieldMapping[field]]: value }
+                });
+              }}
+            />
           </CardContent>
         </Card>
 
@@ -522,13 +483,21 @@ export default function EditarAgencia() {
                       </div>
                       <div>
                         <label className="text-sm font-medium">UF do CRMV *</label>
-                        <Input
+                        <Select
                           value={socio.crmv_uf || ''}
-                          onChange={(e) => updateSocio(index, 'crmv_uf', e.target.value.toUpperCase())}
-                          placeholder="SP"
-                          maxLength={2}
-                          required={socio.is_veterinario}
-                        />
+                          onValueChange={(value) => updateSocio(index, 'crmv_uf', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a UF" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {brazilianStates.map((state) => (
+                              <SelectItem key={state.code} value={state.code}>
+                                {state.code} - {state.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                   )}

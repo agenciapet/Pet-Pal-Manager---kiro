@@ -16,13 +16,48 @@ export default function ContratosGerados() {
   const [filtroTipo, setFiltroTipo] = useState('todos');
 
   useEffect(() => {
-    try {
-      const contratosSalvos = JSON.parse(localStorage.getItem('contratosGeradosPPM') || '[]');
-      setContratos(contratosSalvos.sort((a: ContratoGerado, b: ContratoGerado) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
-    } catch (error) {
-      console.error("Erro ao carregar contratos do localStorage:", error);
-      setContratos([]); // Define como vazio em caso de erro
-    }
+    const carregarContratos = async () => {
+      try {
+        // Primeiro tenta buscar do banco de dados
+        const response = await fetch('http://localhost:3000/api/contracts/generated');
+        if (response.ok) {
+          const contratosBanco = await response.json();
+          if (contratosBanco.length > 0) {
+            // Converte os dados do banco para o formato esperado
+            const contratosFormatados = contratosBanco.map((contrato: any) => ({
+              ...contrato,
+              dados_snapshot: typeof contrato.dados_snapshot === 'string' 
+                ? JSON.parse(contrato.dados_snapshot) 
+                : contrato.dados_snapshot,
+              signatarios: typeof contrato.signatarios === 'string' 
+                ? JSON.parse(contrato.signatarios) 
+                : contrato.signatarios
+            }));
+            setContratos(contratosFormatados.sort((a: ContratoGerado, b: ContratoGerado) => 
+              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+            return;
+          }
+        }
+        
+        // Fallback para localStorage se não houver dados no banco
+        const contratosSalvos = JSON.parse(localStorage.getItem('contratosGeradosPPM') || '[]');
+        setContratos(contratosSalvos.sort((a: ContratoGerado, b: ContratoGerado) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+      } catch (error) {
+        console.error("Erro ao carregar contratos:", error);
+        // Fallback para localStorage em caso de erro
+        try {
+          const contratosSalvos = JSON.parse(localStorage.getItem('contratosGeradosPPM') || '[]');
+          setContratos(contratosSalvos.sort((a: ContratoGerado, b: ContratoGerado) => 
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+        } catch (localError) {
+          console.error("Erro ao carregar contratos do localStorage:", localError);
+          setContratos([]);
+        }
+      }
+    };
+    
+    carregarContratos();
   }, []);
 
   const statusContratoParaBadge = (
@@ -49,7 +84,7 @@ export default function ContratosGerados() {
     const nomeEntidadeMatch = contrato.entidade_nome.toLowerCase().includes(filtroNome.toLowerCase()) || 
                               contrato.template_nome.toLowerCase().includes(filtroNome.toLowerCase());
     const statusMatch = filtroStatus === 'todos' || contrato.status_geral === filtroStatus;
-    const tipoMatch = filtroTipo === 'todos' || contrato.tipo_contrato === filtroTipo;
+    const tipoMatch = filtroTipo === 'todos' || contrato.entidade_tipo === filtroTipo;
     return nomeEntidadeMatch && statusMatch && tipoMatch;
   });
 
@@ -61,7 +96,7 @@ export default function ContratosGerados() {
     // Se for rascunho, poderia levar de volta para PreencherContrato.tsx ou uma tela de edição específica.
     const contrato = contratos.find(c => c.id === id);
     if (contrato && contrato.status_geral === 'rascunho') {
-        navigate(`/contratos/gerar/preencher?templateId=${contrato.template_id}&entidadeId=${contrato.entidade_id}&tipo=${contrato.tipo_contrato}&contratoId=${id}`);
+        navigate(`/contratos/gerar/preencher?templateId=${contrato.template_id}&entidadeId=${contrato.entidade_id}&tipo=${contrato.entidade_tipo}&contratoId=${id}`);
     } else {
         alert(`Editar contrato ${id} (apenas rascunhos podem ser editados diretamente aqui)`);
     }
@@ -87,6 +122,10 @@ export default function ContratosGerados() {
 
     let linksGerados = "Links de assinatura (simulado - copie e cole no navegador):\n";
     signatariosPendentes.forEach(signatario => {
+      if (!signatario.email || signatario.email === 'undefined') {
+        linksGerados += `\nSignatário: ${signatario.nome} - ⚠️ EMAIL NÃO DEFINIDO - Não é possível gerar link de assinatura\n`;
+        return;
+      }
       const token = `${contrato.id}_${signatario.email}`;
       const link = `${window.location.origin}/assinar/${token}`;
       linksGerados += `\nSignatário: ${signatario.nome} (${signatario.email})\nLink: ${link}\n`;
@@ -209,7 +248,7 @@ export default function ContratosGerados() {
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-md font-semibold mb-1 leading-tight">
-                    {contrato.template_nome} (v{contrato.template_versao})
+                    {contrato.template_nome} {contrato.template_versao ? `(v${contrato.template_versao})` : ''}
                   </CardTitle>
                   <Badge variant={statusInfo.variant} className={statusInfo.className}>
                     {statusInfo.text}
@@ -220,23 +259,23 @@ export default function ContratosGerados() {
                 </p>
                  <Badge 
                     variant="outline"
-                    className={contrato.tipo_contrato === 'cliente' ? 'border-blue-500 text-blue-600' : 'border-purple-500 text-purple-600'}
+                    className={contrato.entidade_tipo === 'cliente' ? 'border-blue-500 text-blue-600' : 'border-purple-500 text-purple-600'}
                   >
-                     {contrato.tipo_contrato === 'cliente' ? 'Cliente' : 'Colaborador'}
+                     {contrato.entidade_tipo === 'cliente' ? 'Cliente' : 'Colaborador'}
                   </Badge>
               </CardHeader>
               <CardContent className="flex-grow">
                 <p className="text-xs text-muted-foreground">
-                  Gerado em: {new Date(contrato.data_geracao).toLocaleDateString('pt-BR')}
+                  Gerado em: {new Date(contrato.data_geracao || contrato.data_criacao || contrato.created_at).toLocaleDateString('pt-BR')}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Última atualização: {new Date(contrato.updated_at).toLocaleDateString('pt-BR')}
                 </p>
                  <div className="mt-2 text-xs text-muted-foreground">
-                    Signatários ({contrato.signatarios.length}):
+                    Signatários ({contrato.signatarios?.length || 0}):
                     <ul className="list-disc list-inside pl-1">
-                        {contrato.signatarios.slice(0,2).map(s => <li key={s.email} title={`${s.nome} (${s.status_assinatura})`}>{s.nome} ({s.status_assinatura})</li>)}
-                        {contrato.signatarios.length > 2 && <li>...e mais {contrato.signatarios.length - 2}</li>}
+                        {contrato.signatarios?.slice(0,2).map((s, index) => <li key={s.email || `signatario-${index}`} title={`${s.nome} (${s.status_assinatura})`}>{s.nome} ({s.status_assinatura})</li>)}
+                        {(contrato.signatarios?.length || 0) > 2 && <li key={`more-signatarios-${contrato.id}`}>...e mais {(contrato.signatarios?.length || 0) - 2}</li>}
                     </ul>
                 </div>
               </CardContent>

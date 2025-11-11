@@ -7,6 +7,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/ca
 import { Badge } from '../../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import mockData from '../../data/mockData';
+import { employeeService, clientService } from '../../services/authService';
+import { AddressForm } from '../../components/AddressForm';
 
 interface FormRepresentante {
   id?: string;
@@ -16,6 +18,7 @@ interface FormRepresentante {
   email: string;
   telefones: { numero: string; tipo?: 'principal' | 'celular' | 'trabalho' | 'outro' }[];
   cargo: string;
+  is_socio: boolean;
   is_responsavel_tecnico: boolean;
   is_veterinario: boolean;
   crmv?: string;
@@ -48,6 +51,13 @@ interface FormData {
   tipo_empresa: 'Consultório' | 'Clínica' | 'Hospital' | 'Veterinário Volante' | 'Veterinário Autônomo' | 'PetShop' | 'Petshop com Clínica' | 'Parceria' | 'Outros';
   porte: 'Pequena' | 'Média' | 'Grande' | 'Multinacional';
   status: 'ativo' | 'inadimplente' | 'contrato_cancelado' | 'inativo' | 'em_negociacao' | 'prospect';
+  // Novos campos da empresa
+  numero_registro_cfmv_crmv?: string;
+  data_abertura?: string;
+  capital_social?: string;
+  faturamento_anual?: string;
+  situacao?: string;
+  optante_simples_nacional?: boolean;
   unidades: FormUnidade[];
   historico_alteracoes?: { data_alteracao: string; usuario_responsavel: string; detalhes_alteracao: string[]; }[];
   servicos_contratados?: string[];
@@ -69,6 +79,13 @@ export default function FormCliente() {
     tipo_empresa: 'Clínica',
     porte: 'Média',
     status: 'ativo',
+    // Novos campos da empresa
+    numero_registro_cfmv_crmv: '',
+    data_abertura: '',
+    capital_social: '',
+    faturamento_anual: '',
+    situacao: '',
+    optante_simples_nacional: false,
     unidades: [
       {
         nome_unidade: 'Matriz',
@@ -89,6 +106,7 @@ export default function FormCliente() {
           email: '',
           telefones: [{ numero: '+55 ', tipo: 'principal' }],
           cargo: '',
+          is_socio: false,
           is_responsavel_tecnico: false,
           is_veterinario: false,
           crmv: '',
@@ -97,6 +115,8 @@ export default function FormCliente() {
       }
     ]
   });
+
+  const [brazilianStates, setBrazilianStates] = useState<Array<{ code: string; name: string }>>([]);
 
   useEffect(() => {
     if (isEdit) {
@@ -107,66 +127,61 @@ export default function FormCliente() {
         setInitialData(dadosCarregados);
       }
     }
+
+    // Buscar estados brasileiros
+    employeeService.getBrazilianStates()
+      .then(response => {
+        setBrazilianStates(response.states || []);
+      })
+      .catch(err => {
+        console.error("Erro ao buscar estados brasileiros:", err);
+        // Fallback para estados brasileiros básicos
+        const fallbackStates = [
+          { code: 'SP', name: 'São Paulo' },
+          { code: 'RJ', name: 'Rio de Janeiro' },
+          { code: 'MG', name: 'Minas Gerais' },
+          { code: 'RS', name: 'Rio Grande do Sul' },
+          { code: 'PR', name: 'Paraná' },
+          { code: 'SC', name: 'Santa Catarina' },
+          { code: 'BA', name: 'Bahia' },
+          { code: 'GO', name: 'Goiás' },
+          { code: 'PE', name: 'Pernambuco' },
+          { code: 'CE', name: 'Ceará' }
+        ];
+        setBrazilianStates(fallbackStates);
+      });
   }, [id, isEdit]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const newHistorico: { data_alteracao: string; usuario_responsavel: string; detalhes_alteracao: string[]; }[] = formData.historico_alteracoes ? [...formData.historico_alteracoes] : [];
-    const detalhesAlteracao: string[] = [];
+    try {
+      // Converter dados do frontend para o formato do backend
+      const clientData = {
+        company_name: formData.razao_social,
+        trade_name: formData.nome_fantasia,
+        cnpj: formData.cnpj.replace(/\D/g, ''), // Remove formatação
+        contact_email: formData.email,
+        company_type: formData.tipo_empresa,
+        // Adicionar outros campos conforme necessário
+        is_active: true
+      };
 
-    if (isEdit && initialData) {
-      (Object.keys(formData) as Array<keyof FormData>).forEach(key => {
-        if (key !== 'unidades' && key !== 'historico_alteracoes' && key !== 'telefones' && key !== 'servicos_contratados') { 
-          if (JSON.stringify(formData[key]) !== JSON.stringify(initialData[key])) {
-            detalhesAlteracao.push(`Campo '${String(key)}' alterado de '${JSON.stringify(initialData[key])}' para '${JSON.stringify(formData[key])}'.`);
-          }
-        }
-        // Adicionar comparações mais detalhadas para telefones, unidades e servicos_contratados se necessário
-      });
-    }
-
-    if (detalhesAlteracao.length > 0 || !isEdit) { // Adiciona histórico também na criação
-      newHistorico.push({
-        data_alteracao: new Date().toISOString(),
-        usuario_responsavel: 'usuario@logado.com', // Simulado
-        detalhes_alteracao: isEdit ? detalhesAlteracao : ['Cliente criado.']
-      });
-    }
-
-    // Garantir que todas as unidades e representantes tenham IDs
-    const unidadesComId = formData.unidades.map(unidade => ({
-      ...unidade,
-      id: unidade.id || `un-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      representantes: unidade.representantes.map(rep => ({
-        ...rep,
-        id: rep.id || `rep-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      }))
-    }));
-
-    const dadosClienteParaSalvar: FormData = {
-      ...(formData as Omit<FormData, 'unidades'>), // Cast para omitir unidades temporariamente
-      id: isEdit ? id! : String(mockData.mockClientes.length + 1 + Date.now()), // ID para novo cliente
-      unidades: unidadesComId,
-      servicos_contratados: formData.servicos_contratados || [], // Garantir que existe
-      historico_alteracoes: newHistorico,
-      created_at: isEdit ? initialData?.created_at || new Date().toISOString() : new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-
-    if (isEdit) {
-      const index = mockData.mockClientes.findIndex(c => c.id === id);
-      if (index !== -1) {
-        mockData.mockClientes[index] = dadosClienteParaSalvar;
+      let response;
+      if (isEdit && id) {
+        response = await clientService.updateClient(id, clientData);
+        alert('Cliente atualizado com sucesso!');
+      } else {
+        response = await clientService.createClient(clientData);
+        alert('Cliente criado com sucesso!');
       }
-    } else {
-      mockData.mockClientes.push(dadosClienteParaSalvar);
-    }
 
-    console.log('Salvando cliente:', dadosClienteParaSalvar);
-    // Idealmente, salvar todos os mockData ou a lista específica no localStorage
-    // localStorage.setItem('clientesPPM', JSON.stringify(mockData.mockClientes));
-    navigate('/clientes');
+      console.log('Cliente salvo:', response);
+      navigate('/clientes');
+    } catch (error) {
+      console.error('Erro ao salvar cliente:', error);
+      alert('Erro ao salvar cliente. Tente novamente.');
+    }
   };
 
   const formatCNPJ = (value: string) => {
@@ -207,6 +222,17 @@ export default function FormCliente() {
       .replace(/(-\d{3})\d+?$/, '$1');
   };
 
+  const formatCurrency = (value: string) => {
+    const numericValue = value.replace(/\D/g, '');
+    if (!numericValue) return '';
+    
+    const number = parseInt(numericValue) / 100;
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(number);
+  };
+
   const addUnidade = () => {
     setFormData(prev => ({
       ...prev,
@@ -222,6 +248,7 @@ export default function FormCliente() {
             email: '',
             telefones: [{ numero: '+55 ', tipo: 'principal' }],
             cargo: '',
+            is_socio: false,
             is_responsavel_tecnico: false,
             is_veterinario: false,
             crmv: '',
@@ -263,6 +290,7 @@ export default function FormCliente() {
       email: '',
       telefones: [{ numero: '+55 ', tipo: 'principal' }],
       cargo: '',
+      is_socio: false,
       is_responsavel_tecnico: false,
       is_veterinario: false,
       crmv: '',
@@ -407,6 +435,68 @@ export default function FormCliente() {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <label className="text-sm font-medium">Número de Registro CFMV/CRMV</label>
+              <Input
+                value={formData.numero_registro_cfmv_crmv || ''}
+                onChange={(e) => setFormData({ ...formData, numero_registro_cfmv_crmv: e.target.value })}
+                placeholder="Ex: 12345/SP"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Data de Abertura</label>
+              <Input
+                type="date"
+                value={formData.data_abertura || ''}
+                onChange={(e) => setFormData({ ...formData, data_abertura: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Capital Social</label>
+              <Input
+                value={formData.capital_social || ''}
+                onChange={(e) => setFormData({ ...formData, capital_social: formatCurrency(e.target.value) })}
+                placeholder="R$ 0,00"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Faturamento Anual</label>
+              <Input
+                value={formData.faturamento_anual || ''}
+                onChange={(e) => setFormData({ ...formData, faturamento_anual: formatCurrency(e.target.value) })}
+                placeholder="R$ 0,00"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Situação</label>
+              <Select 
+                value={formData.situacao || ''}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, situacao: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a situação" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ativa">Ativa</SelectItem>
+                  <SelectItem value="suspensa">Suspensa</SelectItem>
+                  <SelectItem value="baixada">Baixada</SelectItem>
+                  <SelectItem value="inapta">Inapta</SelectItem>
+                  <SelectItem value="nula">Nula</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center space-x-2 pt-6">
+              <input
+                type="checkbox"
+                id="optante_simples_nacional"
+                checked={formData.optante_simples_nacional || false}
+                onChange={(e) => setFormData({ ...formData, optante_simples_nacional: e.target.checked })}
+                className="rounded border-gray-300"
+              />
+              <label htmlFor="optante_simples_nacional" className="text-sm font-medium">
+                Optante pelo Simples Nacional
+              </label>
+            </div>
           </CardContent>
         </Card>
 
@@ -443,82 +533,42 @@ export default function FormCliente() {
               {/* Endereço da Unidade */}
               <div className="border p-4 rounded-md space-y-4">
                 <h4 className="font-medium">Endereço da Unidade</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium">CEP *</label>
-                    <Input
-                      value={unidade.endereco.cep}
-                      onChange={(e) => updateUnidadeEndereco(unidadeIndex, 'cep', formatCEP(e.target.value))}
-                      maxLength={9}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">País *</label>
-                    <Input
-                      value={unidade.endereco.pais}
-                      onChange={(e) => updateUnidadeEndereco(unidadeIndex, 'pais', e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Logradouro *</label>
-                    <Input
-                      value={unidade.endereco.logradouro}
-                      onChange={(e) => updateUnidadeEndereco(unidadeIndex, 'logradouro', e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Número *</label>
-                    <Input
-                      value={unidade.endereco.numero}
-                      onChange={(e) => updateUnidadeEndereco(unidadeIndex, 'numero', e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Complemento</label>
-                    <Input
-                      value={unidade.endereco.complemento}
-                      onChange={(e) => updateUnidadeEndereco(unidadeIndex, 'complemento', e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Bairro *</label>
-                    <Input
-                      value={unidade.endereco.bairro}
-                      onChange={(e) => updateUnidadeEndereco(unidadeIndex, 'bairro', e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Cidade *</label>
-                    <Input
-                      value={unidade.endereco.cidade}
-                      onChange={(e) => updateUnidadeEndereco(unidadeIndex, 'cidade', e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Estado *</label>
-                    <Input
-                      value={unidade.endereco.estado}
-                      onChange={(e) => updateUnidadeEndereco(unidadeIndex, 'estado', e.target.value)}
-                      maxLength={2}
-                      required
-                    />
-                  </div>
-                   <div>
-                    <label className="text-sm font-medium">Telefone da Unidade *</label>
-                    <Input
-                      value={unidade.telefones[0].numero}
-                      onChange={(e) => setFormData({ ...formData, unidades: formData.unidades.map(u => u.id === unidade.id ? { ...u, telefones: [{ ...u.telefones[0], numero: formatPhone(e.target.value) }] } : u) })}
-                      maxLength={15}
-                      required
-                    />
-                  </div>
-                </div>
+                <AddressForm
+                  data={{
+                    zip_code: unidade.endereco.cep,
+                    country: unidade.endereco.pais,
+                    street: unidade.endereco.logradouro,
+                    address_number: unidade.endereco.numero,
+                    address_complement: unidade.endereco.complemento,
+                    neighborhood: unidade.endereco.bairro,
+                    city: unidade.endereco.cidade,
+                    state: unidade.endereco.estado
+                  }}
+                  onChange={(field, value) => {
+                    const fieldMapping: Record<string, string> = {
+                      zip_code: 'cep',
+                      country: 'pais',
+                      street: 'logradouro',
+                      address_number: 'numero',
+                      address_complement: 'complemento',
+                      neighborhood: 'bairro',
+                      city: 'cidade',
+                      state: 'estado'
+                    };
+                    updateUnidadeEndereco(unidadeIndex, fieldMapping[field], value);
+                  }}
+                />
+              </div>
+
+              {/* Telefone da Unidade */}
+              <div>
+                <label className="text-sm font-medium">Telefone da Unidade *</label>
+                <Input
+                  value={unidade.telefones[0].numero}
+                  onChange={(e) => setFormData({ ...formData, unidades: formData.unidades.map(u => u.id === unidade.id ? { ...u, telefones: [{ ...u.telefones[0], numero: formatPhone(e.target.value) }] } : u) })}
+                  maxLength={15}
+                  required
+                />
               </div>
 
               {/* Representantes da Unidade */}
@@ -593,6 +643,15 @@ export default function FormCliente() {
                         <label className="flex items-center space-x-2">
                           <input
                             type="checkbox"
+                            checked={rep.is_socio}
+                            onChange={(e) => updateRepresentante(unidadeIndex, repIndex, 'is_socio', e.target.checked)}
+                            className="rounded border-gray-300"
+                          />
+                          <span>Sócio</span>
+                        </label>
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
                             checked={rep.is_responsavel_tecnico}
                             onChange={(e) => updateRepresentante(unidadeIndex, repIndex, 'is_responsavel_tecnico', e.target.checked)}
                             className="rounded border-gray-300"
@@ -627,12 +686,21 @@ export default function FormCliente() {
                           </div>
                           <div>
                             <label className="text-sm font-medium">UF do CRMV *</label>
-                            <Input
-                              value={rep.crmv_uf}
-                              onChange={(e) => updateRepresentante(unidadeIndex, repIndex, 'crmv_uf', e.target.value.toUpperCase())}
-                              maxLength={2}
-                              required={rep.is_veterinario}
-                            />
+                            <Select
+                              value={rep.crmv_uf || ''}
+                              onValueChange={(value) => updateRepresentante(unidadeIndex, repIndex, 'crmv_uf', value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione a UF" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {brazilianStates.map((state) => (
+                                  <SelectItem key={state.code} value={state.code}>
+                                    {state.code} - {state.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                         </>
                       )}

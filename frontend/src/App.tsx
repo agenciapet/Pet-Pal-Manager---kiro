@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   BrowserRouter as Router,
   Routes,
@@ -8,15 +8,16 @@ import {
 } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { AuthProvider } from './contexts/AuthContext';
 import { Button } from './components/ui/button';
-import { jwtDecode } from 'jwt-decode';
-import { authService } from './services/authService';
 
 // Componentes
 import Layout from './components/Layout/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 import Login from './pages/Login/Login';
+import Register from './pages/Login/Register';
+import ForgotPassword from './pages/Login/ForgotPassword';
 
 // Páginas
 import Dashboard from './pages/Dashboard/Dashboard';
@@ -37,6 +38,7 @@ import Reembolsos from './pages/Reembolsos/Reembolsos';
 import TemplatesContrato from './pages/Contratos/TemplatesContrato';
 import FormTemplateContrato from './pages/Contratos/FormTemplateContrato';
 import SelecionarEntidadeContrato from './pages/Contratos/SelecionarEntidadeContrato';
+import SelecionarServicos from './pages/Contratos/SelecionarServicos';
 import PreencherContrato from './pages/Contratos/PreencherContrato';
 import ContratosGerados from './pages/Contratos/ContratosGerados';
 import DetalhesContratoGerado from './pages/Contratos/DetalhesContratoGerado';
@@ -56,38 +58,34 @@ const UnauthorizedPage = () => (
 );
 
 function App() {
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const decodedToken: { exp: number } = jwtDecode(token);
-        const currentTime = Date.now() / 1000; // em segundos
-
-        if (decodedToken.exp < currentTime) {
-          console.log('Sessão expirada, fazendo logout...');
-          alert('Sua sessão expirou. Você será redirecionado para a página de login.');
-          authService.logout();
-        }
-      } catch (error) {
-        console.error('Erro ao decodificar token ou token inválido:', error);
-        // Token inválido (não pode ser decodificado), tratar como expirado
-        alert('Token inválido. Você será redirecionado para a página de login.');
-        authService.logout();
-      }
-    }
-  }, []); // Roda apenas uma vez na montagem do App
-
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <Router>
-          <Routes>
+        <AuthProvider>
+          <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <Routes>
             <Route 
               path="/login" 
               element={
-              <PublicRoute>
-                <Login />
-              </PublicRoute>
+                <PublicRoute>
+                  <Login />
+                </PublicRoute>
+              }
+            />
+            <Route 
+              path="/register" 
+              element={
+                <PublicRoute>
+                  <Register />
+                </PublicRoute>
+              }
+            />
+            <Route 
+              path="/forgot-password" 
+              element={
+                <PublicRoute>
+                  <ForgotPassword />
+                </PublicRoute>
               }
             />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
@@ -166,6 +164,14 @@ function App() {
                 } 
               />
               <Route 
+                path="contratos/gerar/selecionar-servicos" 
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <SelecionarServicos />
+              </ProtectedRoute>
+                } 
+              />
+              <Route 
                 path="contratos/gerar/preencher" 
                 element={
               <ProtectedRoute requiredRole="admin">
@@ -196,8 +202,9 @@ function App() {
             
             {/* Adicionar uma rota catch-all fora do ProtectedRoute para não autenticados */}
             {/* <Route path="*" element={<Navigate to="/login" replace />} /> */}
-          </Routes>
-        </Router>
+            </Routes>
+          </Router>
+        </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

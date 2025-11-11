@@ -70,6 +70,7 @@ export interface RepresentanteCliente {
   email: string;
   telefones: { numero: string; tipo?: 'principal' | 'celular' | 'trabalho' | 'outro' }[];
   cargo: string;
+  is_socio: boolean;
   is_responsavel_tecnico: boolean;
   is_veterinario: boolean;
   crmv?: string;
@@ -95,6 +96,13 @@ export interface Cliente {
   telefones: { numero: string; tipo?: 'principal' | 'celular' | 'trabalho' | 'outro' }[];
   tipo_empresa: 'Consultório' | 'Clínica' | 'Hospital' | 'Veterinário Volante' | 'Veterinário Autônomo' | 'PetShop' | 'Petshop com Clínica' | 'Parceria' | 'Outros';
   porte: 'Pequena' | 'Média' | 'Grande' | 'Multinacional';
+  // Novos campos da empresa
+  numero_registro_cfmv_crmv?: string;
+  data_abertura?: string;
+  capital_social?: string;
+  faturamento_anual?: string;
+  situacao?: string;
+  optante_simples_nacional?: boolean;
   unidades: UnidadeCliente[];
   servicos_contratados: ServicoContratado[];
   status: 'ativo' | 'inadimplente' | 'contrato_cancelado' | 'inativo' | 'em_negociacao' | 'prospect';
@@ -434,6 +442,12 @@ const mockClientes: Cliente[] = [
     telefones: [{ numero: '+55 (11) 2345-6789', tipo: 'principal' }],
     tipo_empresa: 'Clínica',
     porte: 'Pequena',
+    numero_registro_cfmv_crmv: '12345/SP',
+    data_abertura: '2020-03-15',
+    capital_social: 'R$ 50.000,00',
+    faturamento_anual: 'R$ 600.000,00',
+    situacao: 'ativa',
+    optante_simples_nacional: true,
     unidades: [
       {
         id: 'un1-1',
@@ -458,6 +472,7 @@ const mockClientes: Cliente[] = [
             email: 'ricardo.almeida@aumiauvet.com.br',
             telefones: [{ numero: '+55 (11) 91111-2222', tipo: 'principal' }],
             cargo: 'Diretor Clínico',
+            is_socio: true,
             is_responsavel_tecnico: true,
             is_veterinario: true,
             crmv: 'CRMV-SP 67890',
@@ -472,6 +487,7 @@ const mockClientes: Cliente[] = [
             email: 'fernanda.costa@aumiauvet.com.br',
             telefones: [{ numero: '+55 (11) 92222-3333', tipo: 'principal' }],
             cargo: 'Gerente Administrativa',
+            is_socio: false,
             is_responsavel_tecnico: false,
             is_veterinario: false,
           }
@@ -499,6 +515,7 @@ const mockClientes: Cliente[] = [
             email: 'camila.santos@aumiauvet.com.br',
             telefones: [{ numero: '+55 (11) 93333-4444', tipo: 'principal' }],
             cargo: 'Veterinária Chefe',
+            is_socio: false,
             is_responsavel_tecnico: true,
             is_veterinario: true,
             crmv: 'CRMV-SP 67891',
@@ -526,6 +543,10 @@ const mockClientes: Cliente[] = [
     telefones: [{ numero: '(21) 9876-5432', tipo: 'principal' }],
     tipo_empresa: 'Petshop com Clínica',
     porte: 'Média',
+    data_abertura: '2018-08-20',
+    capital_social: 'R$ 80.000,00',
+    situacao: 'ativa',
+    optante_simples_nacional: false,
     unidades: [
       {
         id: 'un2-1',
@@ -550,6 +571,7 @@ const mockClientes: Cliente[] = [
             email: 'mariana.silva@caofeliz.com',
             telefones: [{ numero: '(21) 95555-6666', tipo: 'principal' }],
             cargo: 'Sócia-Proprietária',
+            is_socio: true,
             is_responsavel_tecnico: false,
             is_veterinario: true,
             crmv: 'CRMV-RJ 12321',
@@ -601,6 +623,7 @@ const mockClientes: Cliente[] = [
             email: 'fernando.pereira@hvsalvandovidas.com.br',
             telefones: [{ numero: '(31) 98888-9999', tipo: 'principal' }],
             cargo: 'CEO e Diretor Técnico',
+            is_socio: true,
             is_responsavel_tecnico: true,
             is_veterinario: true,
             crmv: 'CRMV-MG 98765',
@@ -651,6 +674,7 @@ const mockClientes: Cliente[] = [
             email: 'sofia.b@vetfofura.com',
             telefones: [{ numero: '(41) 91213-1415', tipo: 'principal' }],
             cargo: 'Veterinária Proprietária',
+            is_socio: true,
             is_responsavel_tecnico: true,
             is_veterinario: true,
             crmv: 'CRMV-PR 23456',
@@ -699,6 +723,7 @@ const mockClientes: Cliente[] = [
             email: 'joaopedro@amigofielpet.com',
             telefones: [{ numero: '(51) 98765-4321', tipo: 'principal' }],
             cargo: 'Gerente Comercial',
+            is_socio: false,
             is_responsavel_tecnico: false,
             is_veterinario: false
           }

@@ -150,6 +150,46 @@ export default function DetalhesCliente() {
                   {new Date(cliente.created_at).toLocaleDateString('pt-BR')}
                 </p>
               </div>
+              {cliente.numero_registro_cfmv_crmv && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Registro CFMV/CRMV</p>
+                  <p className="font-medium">{cliente.numero_registro_cfmv_crmv}</p>
+                </div>
+              )}
+              {cliente.data_abertura && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Data de Abertura</p>
+                  <p className="font-medium">
+                    {new Date(cliente.data_abertura).toLocaleDateString('pt-BR')}
+                  </p>
+                </div>
+              )}
+              {cliente.capital_social && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Capital Social</p>
+                  <p className="font-medium">{cliente.capital_social}</p>
+                </div>
+              )}
+              {cliente.faturamento_anual && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Faturamento Anual</p>
+                  <p className="font-medium">{cliente.faturamento_anual}</p>
+                </div>
+              )}
+              {cliente.situacao && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Situação</p>
+                  <p className="font-medium capitalize">{cliente.situacao}</p>
+                </div>
+              )}
+              {cliente.optante_simples_nacional !== undefined && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Simples Nacional</p>
+                  <p className="font-medium">
+                    {cliente.optante_simples_nacional ? 'Optante' : 'Não Optante'}
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -211,6 +251,9 @@ export default function DetalhesCliente() {
                             : 'Não informado'}
                         </p>
                         <div className="flex flex-wrap gap-1 mt-1">
+                          {representante.is_socio && (
+                            <Badge className="text-xs bg-green-100 text-green-800">Sócio</Badge>
+                          )}
                           {representante.is_responsavel_tecnico && (
                             <Badge className="text-xs" variant="outline">Resp. Técnico</Badge>
                           )}

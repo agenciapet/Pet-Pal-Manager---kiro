@@ -41,7 +41,7 @@ async function populateDatabase() {
     if (adminExists.rows.length === 0) {
       const hashedPassword = await bcrypt.hash('admin123', 10);
       const adminResult = await client.query(
-        'INSERT INTO users (id, full_name, email, password, role) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+        'INSERT INTO users (id, name, email, password_hash, role) VALUES ($1, $2, $3, $4, $5) RETURNING id',
         [uuidv4(), 'Administrador do Sistema', adminEmail, hashedPassword, 'admin']
       );
       adminUserId = adminResult.rows[0].id;
@@ -72,7 +72,7 @@ async function populateDatabase() {
         pix_key_type: 'Email',
         is_veterinarian: false,
         phones: [
-          { phone_number: '11987654321', phone_type: 'Principal', is_primary: true },
+          { phone_number: '11987654321', is_primary: true },
         ]
       },
       {
@@ -97,8 +97,8 @@ async function populateDatabase() {
         crmv_state: 'RJ',
         crmv_status: 'Ativo',
         phones: [
-          { phone_number: '21912345678', phone_type: 'Pessoal', is_primary: true },
-          { phone_number: '2133445566', phone_type: 'Empresa', is_primary: false },
+          { phone_number: '21912345678', is_primary: true },
+          { phone_number: '2133445566', is_primary: false },
         ]
       },
       {
@@ -120,7 +120,7 @@ async function populateDatabase() {
         pix_key_type: 'Chave Aleatória',
         is_veterinarian: false,
         phones: [
-          { phone_number: '31988776655', phone_type: 'Whatsapp', is_primary: true },
+          { phone_number: '31988776655', is_primary: true },
         ]
       },
     ];
@@ -150,8 +150,8 @@ async function populateDatabase() {
 
       for (const phone of emp.phones) {
         await client.query(
-          'INSERT INTO employee_phones (employee_id, phone_number, phone_type, is_primary) VALUES ($1, $2, $3, $4)',
-          [newEmployeeId, phone.phone_number, phone.phone_type, phone.is_primary]
+          'INSERT INTO employee_phones (employee_id, phone_number, is_primary) VALUES ($1, $2, $3)',
+          [newEmployeeId, phone.phone_number, phone.is_primary]
         );
         console.log(`   Telefone ${phone.phone_number} inserido para ${emp.full_name}`);
       }

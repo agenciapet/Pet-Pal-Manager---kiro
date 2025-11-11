@@ -4,8 +4,9 @@ import { ArrowLeft, FileSearch, User, Building } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
-import { mockClientes, mockColaboradores, mockContratoTemplates } from '../../data/mockData';
+import { mockContratoTemplates } from '../../data/mockData';
 import type { Cliente, Colaborador, ContratoTemplate } from '../../data/mockData';
+import { clientService, employeeService } from '../../services/authService';
 
 export default function SelecionarEntidadeContrato() {
   const [searchParams] = useSearchParams();
@@ -19,26 +20,84 @@ export default function SelecionarEntidadeContrato() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!templateId || !tipoTemplate) {
-      alert('ID do template ou tipo não fornecido.');
-      navigate('/contratos/templates');
-      return;
-    }
+    const loadData = async () => {
+      if (!templateId || !tipoTemplate) {
+        alert('ID do template ou tipo não fornecido.');
+        navigate('/contratos/templates');
+        return;
+      }
 
-    const foundTemplate = mockContratoTemplates.find(t => t.id === templateId);
-    if (!foundTemplate || foundTemplate.tipo !== tipoTemplate) {
-      alert('Template inválido ou tipo não corresponde.');
-      navigate('/contratos/templates');
-      return;
-    }
-    setTemplate(foundTemplate);
+      const foundTemplate = mockContratoTemplates.find(t => t.id === templateId);
+      if (!foundTemplate || foundTemplate.tipo !== tipoTemplate) {
+        alert('Template inválido ou tipo não corresponde.');
+        navigate('/contratos/templates');
+        return;
+      }
+      setTemplate(foundTemplate);
 
-    if (tipoTemplate === 'cliente') {
-      setEntidades(mockClientes.filter(c => c.is_active));
-    } else if (tipoTemplate === 'colaborador') {
-      setEntidades(mockColaboradores.filter(c => c.is_active));
-    }
-    setLoading(false);
+      try {
+        if (tipoTemplate === 'cliente') {
+          try {
+            const { companies } = await clientService.getAllClients('active');
+            // Converter dados do backend para o formato esperado
+            const clientesFormatados = companies.map((company: any) => ({
+              id: company.id,
+              razao_social: company.company_name,
+              nome_fantasia: company.trade_name || company.company_name,
+              cnpj: company.cnpj,
+              is_active: company.is_active,
+              // Adicionar outros campos necessários
+              unidades: company.units || [],
+              servicos_contratados: company.services || [],
+              email: company.contact_email
+            }));
+            setEntidades(clientesFormatados);
+          } catch (apiError) {
+            console.warn('API não disponível, usando dados mock para clientes:', apiError);
+            // Fallback para mock data se API não estiver disponível
+            const { mockClientes } = await import('../../data/mockData');
+            setEntidades(mockClientes.filter(c => c.is_active));
+          }
+        } else if (tipoTemplate === 'colaborador') {
+          try {
+            const { employees } = await employeeService.getAllEmployees('active');
+            // Converter dados do backend para o formato esperado
+            const colaboradoresFormatados = employees.map((employee: any) => ({
+              id: employee.id,
+              nome_completo: employee.full_name,
+              cpf: employee.cpf,
+              is_active: employee.is_active,
+              email: employee.contact_email,
+              // Adicionar outros campos necessários
+              cargo: employee.position,
+              salario: employee.salary,
+              data_contratacao: employee.hire_date,
+              endereco: {
+                logradouro: employee.street,
+                numero: employee.address_number,
+                bairro: employee.neighborhood,
+                cidade: employee.city,
+                estado: employee.state,
+                cep: employee.zip_code
+              }
+            }));
+            setEntidades(colaboradoresFormatados);
+          } catch (apiError) {
+            console.warn('API não disponível, usando dados mock para colaboradores:', apiError);
+            // Fallback para mock data se API não estiver disponível
+            const { mockColaboradores } = await import('../../data/mockData');
+            setEntidades(mockColaboradores.filter(c => c.is_active));
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar entidades:', error);
+        alert('Erro ao carregar dados. Verifique sua conexão.');
+      }
+      
+      setLoading(false);
+    };
+
+    loadData();
   }, [templateId, tipoTemplate, navigate]);
 
   const entidadesFiltradas = entidades.filter(entidade => {
@@ -57,8 +116,13 @@ export default function SelecionarEntidadeContrato() {
   });
 
   const handleSelecionarEntidade = (entidadeId: string) => {
-    // Navegar para a próxima etapa: pré-visualização e preenchimento do contrato
-    navigate(`/contratos/gerar/preencher?templateId=${templateId}&entidadeId=${entidadeId}&tipo=${tipoTemplate}`);
+    // Navegar para seleção de serviços (apenas para clientes)
+    if (tipoTemplate === 'cliente') {
+      navigate(`/contratos/gerar/selecionar-servicos?templateId=${templateId}&entidadeId=${entidadeId}&tipo=${tipoTemplate}`);
+    } else {
+      // Para colaboradores, ir direto para preenchimento
+      navigate(`/contratos/gerar/preencher?templateId=${templateId}&entidadeId=${entidadeId}&tipo=${tipoTemplate}`);
+    }
   };
 
   if (loading || !template) {

@@ -15,6 +15,7 @@ const serviceRoutes = require('./routes/services');
 const agencyRoutes = require('./routes/agency');
 const userRoutes = require('./routes/users');
 const utilsRoutes = require('./routes/utilsRoutes');
+const contractsRoutes = require('./routes/contractsRoutes');
 
 // Middlewares
 app.use(cors());
@@ -45,6 +46,7 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/agency', agencyRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/utils', utilsRoutes);
+app.use('/api/contracts', contractsRoutes);
 
 // Tratamento de erros
 app.use((err, req, res, next) => {

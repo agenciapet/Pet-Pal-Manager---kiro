@@ -10,15 +10,22 @@ import {
   Alert,
   CircularProgress,
   Link as MuiLink,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import { useAuth } from '../../contexts/AuthContext';
 
-const Login: React.FC = () => {
+const Register: React.FC = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { register } = useAuth();
   const [formData, setFormData] = useState({
+    name: '',
     email: '',
     password: '',
+    confirmPassword: '',
+    role: 'user',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -36,12 +43,25 @@ const Login: React.FC = () => {
     setLoading(true);
     setError('');
 
+    // Validações
+    if (formData.password !== formData.confirmPassword) {
+      setError('As senhas não coincidem');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError('A senha deve ter pelo menos 6 caracteres');
+      setLoading(false);
+      return;
+    }
+
     try {
-      await login(formData.email, formData.password);
+      await register(formData.email, formData.password, formData.role, formData.name);
       // Redirecionar para dashboard
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erro ao fazer login');
+      setError(err.response?.data?.message || 'Erro ao criar conta');
     } finally {
       setLoading(false);
     }
@@ -62,7 +82,7 @@ const Login: React.FC = () => {
             PetPal Manager
           </Typography>
           <Typography component="h2" variant="h6" align="center" gutterBottom>
-            Faça login em sua conta
+            Criar nova conta
           </Typography>
           
           {error && (
@@ -76,11 +96,24 @@ const Login: React.FC = () => {
               margin="normal"
               required
               fullWidth
+              id="name"
+              label="Nome completo"
+              name="name"
+              autoComplete="name"
+              autoFocus
+              value={formData.name}
+              onChange={handleChange}
+              disabled={loading}
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
               id="email"
               label="Email"
               name="email"
               autoComplete="email"
-              autoFocus
+              type="email"
               value={formData.email}
               onChange={handleChange}
               disabled={loading}
@@ -93,11 +126,40 @@ const Login: React.FC = () => {
               label="Senha"
               type="password"
               id="password"
-              autoComplete="current-password"
+              autoComplete="new-password"
               value={formData.password}
               onChange={handleChange}
               disabled={loading}
             />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="confirmPassword"
+              label="Confirmar senha"
+              type="password"
+              id="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              disabled={loading}
+            />
+            <FormControl fullWidth margin="normal">
+              <InputLabel id="role-label">Perfil</InputLabel>
+              <Select
+                labelId="role-label"
+                id="role"
+                name="role"
+                value={formData.role}
+                label="Perfil"
+                onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
+                disabled={loading}
+              >
+                <MenuItem value="user">Usuário</MenuItem>
+                <MenuItem value="colaborador">Colaborador</MenuItem>
+                <MenuItem value="financeiro">Financeiro</MenuItem>
+                <MenuItem value="admin">Administrador</MenuItem>
+              </Select>
+            </FormControl>
             <Button
               type="submit"
               fullWidth
@@ -105,29 +167,14 @@ const Login: React.FC = () => {
               sx={{ mt: 3, mb: 2 }}
               disabled={loading}
             >
-              {loading ? <CircularProgress size={24} /> : 'Entrar'}
+              {loading ? <CircularProgress size={24} /> : 'Criar conta'}
             </Button>
             
-            <Box sx={{ textAlign: 'center', mt: 2 }}>
-              <MuiLink component={Link} to="/forgot-password" variant="body2" sx={{ display: 'block', mb: 1 }}>
-                Esqueceu sua senha?
-              </MuiLink>
-              <MuiLink component={Link} to="/register" variant="body2">
-                Não tem uma conta? Cadastre-se
+            <Box sx={{ textAlign: 'center' }}>
+              <MuiLink component={Link} to="/login" variant="body2">
+                Já tem uma conta? Faça login
               </MuiLink>
             </Box>
-          </Box>
-
-          <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
-            <Typography variant="body2" align="center" gutterBottom>
-              <strong>Credenciais de teste:</strong>
-            </Typography>
-            <Typography variant="body2" align="center">
-              Email: admin@petpalmanager.com
-            </Typography>
-            <Typography variant="body2" align="center">
-              Senha: admin123
-            </Typography>
           </Box>
         </Paper>
       </Box>
@@ -135,4 +182,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login; 
+export default Register;
