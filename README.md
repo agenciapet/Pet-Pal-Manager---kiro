@@ -1,224 +1,143 @@
-# PetPal Manager (PPM) - Sistema de Gestão Empresarial
+# Pet Pal Manager (PPM) 🐾
 
-Sistema de gestão empresarial integrado desenvolvido especificamente para agências que atendem o setor veterinário, com foco em conformidade com a LGPD e funcionalidades específicas para o mercado pet.
+Sistema completo de gestão para clínicas veterinárias, pet shops e hospitais veterinários.
 
-## 🚀 Características Principais
+## 🚀 Funcionalidades Implementadas
 
-- **Interface Moderna**: Desenvolvida com shadcn/ui e Tailwind CSS
-- **Tema Claro/Escuro**: Toggle para alternar entre temas
-- **Responsivo**: Interface adaptável para desktop e mobile
-- **Dados Mockados**: Sistema funcional com dados de teste
-- **Arquitetura Modular**: Organização clara e escalável
+### 🔐 Sistema de Autenticação
+- Login com JWT
+- Registro de novos usuários
+- Recuperação de senha
+- Rotas protegidas
+- Contexto de autenticação React
 
-## 🎯 Módulos do Sistema
+### 👥 Gestão de Clientes
+- Cadastro completo de empresas veterinárias
+- Múltiplas unidades por cliente
+- Representantes com informações detalhadas
+- Novos campos empresariais:
+  - Número de Registro CFMV/CRMV
+  - Data de Abertura
+  - Capital Social
+  - Faturamento Anual
+  - Situação da empresa
+  - Optante pelo Simples Nacional
+  - Identificação de sócios
 
-### 1. Dashboard
-- Visão geral com estatísticas em tempo real
-- Cards informativos com métricas importantes
-- Atividades recentes
-- Resumo financeiro
+### 🏢 Gestão de Colaboradores
+- Cadastro de funcionários
+- Controle de cargos e permissões
+- Histórico de alterações
 
-### 2. Gestão de Colaboradores
-- Cadastro completo de colaboradores
-- Validação de CPF e CRMV para veterinários
-- Controle de contratos e salários
-- Sistema de reembolsos
-- Histórico financeiro
-
-### 3. Gestão de Clientes
-- Cadastro empresarial com validação de CNPJ
-- Gestão de representantes e sócios
-- Contratos digitais com assinatura eletrônica
-- Faturamento e cobrança
-- Múltiplos telefones e endereços
-
-### 4. Gestão de Serviços
-- Cadastro de serviços oferecidos
-- Controle de valores e periodicidade
-- Associação com contratos
-- Relatórios de performance
-
-### 5. Cadastro da Agência
-- Dados da agência e sócios
-- Documentos e certificações
-- Informações para contratos
-
-### 6. Gerenciamento de Usuários
-- Controle de acesso por perfis
-- Permissões granulares
-- Associação com colaboradores/sócios
+### 📋 Sistema de Contratos
+- Geração automática de contratos
+- Seleção de serviços
+- Assinatura digital
+- Gestão de entidades contratuais
 
 ## 🛠️ Tecnologias Utilizadas
 
 ### Frontend
 - **React 18** com TypeScript
 - **Vite** para build e desenvolvimento
-- **shadcn/ui** para componentes
 - **Tailwind CSS** para estilização
-- **Lucide React** para ícones
 - **React Router** para navegação
-- **React Query** para gerenciamento de estado
+- **Lucide React** para ícones
+- **Axios** para requisições HTTP
 
-### Componentes UI
-- **Radix UI** como base dos componentes
-- **class-variance-authority** para variantes
-- **clsx** e **tailwind-merge** para classes condicionais
+### Backend
+- **Node.js** com Express
+- **JWT** para autenticação
+- **bcrypt** para hash de senhas
+- **CORS** configurado
+- **SQLite** para desenvolvimento
 
-## 📦 Instalação e Execução
+## 🚀 Como Executar
 
 ### Pré-requisitos
-- Node.js 18+ 
+- Node.js 18+
 - npm ou yarn
 
-### Instalação
-
-1. Clone o repositório:
+### Backend
 ```bash
-git clone <url-do-repositorio>
-cd PPM
-```
-
-2. Instale as dependências do frontend:
-```bash
-cd frontend
+cd backend
 npm install
-```
-
-3. Execute o frontend:
-```bash
 npm run dev
 ```
 
-4. Acesse o sistema:
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
 ```
-http://localhost:5173
+
+## 📱 Acesso ao Sistema
+
+### Usuário Admin Padrão
+- **Email:** admin@petpal.com
+- **Senha:** admin123
+
+### URLs Principais
+- Frontend: http://localhost:5173
+- Backend: http://localhost:3001
+
+## 🌐 Deploy
+
+### Vercel (Frontend)
+O frontend está configurado para deploy automático na Vercel. Conecte o repositório GitHub à Vercel para deploy contínuo.
+
+### Backend
+Configure as variáveis de ambiente no seu provedor de hospedagem:
+```env
+JWT_SECRET=sua_chave_secreta_jwt
+PORT=3001
+NODE_ENV=production
 ```
 
-### Credenciais de Teste
-- **Email**: admin@petpalmanager.com
-- **Senha**: admin123
+## 📋 Funcionalidades Pendentes
 
-## 🎨 Design System
+Consulte os arquivos:
+- `FUNCIONALIDADES_PENDENTES.md`
+- `Funcionalidade Pendentes 2.md`
 
-### Temas
-- **Tema Claro**: Interface limpa e profissional
-- **Tema Escuro**: Reduz fadiga visual em ambientes com pouca luz
-- **Toggle**: Alternância fácil entre temas
+## 🔧 Estrutura do Projeto
 
-### Componentes
-- **Cards**: Informações organizadas em containers
-- **Tables**: Listagens com filtros e ações
-- **Buttons**: Variantes para diferentes ações
-- **Badges**: Status e categorias
-- **Forms**: Formulários responsivos
+```
+├── backend/
+│   ├── src/
+│   │   ├── controllers/
+│   │   ├── middlewares/
+│   │   ├── routes/
+│   │   └── server.js
+│   └── package.json
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── contexts/
+│   │   ├── pages/
+│   │   ├── services/
+│   │   └── data/
+│   └── package.json
+└── README.md
+```
 
-### Efeitos Visuais
-- **Hover Effects**: Sombras e transições suaves
-- **Loading States**: Indicadores de carregamento
-- **Animations**: Transições fluidas
-- **Responsive**: Adaptação automática para diferentes telas
+## 🤝 Contribuição
 
-## 📊 Dados Mockados
-
-O sistema inclui dados de teste para demonstração:
-
-### Colaboradores
-- Dr. João Silva Santos (Veterinário - CRMV 12345/SP)
-- Maria Oliveira Costa (Colaboradora)
-- Dra. Ana Paula Ferreira (Veterinária - CRMV 67890/SP)
-
-### Clientes
-- Clínica Veterinária Pet Care Ltda
-- Hospital Veterinário Animal Life S.A.
-- Pet Shop Mundo Animal ME
-
-### Serviços
-- Plano Beagle (R$ 3.157,00/mês)
-- Plano Golden Retriever (R$ 5.500,00/mês)
-- Plano Chihuahua (R$ 1.800,00/mês)
-- Consultoria Estratégica (R$ 2.500,00/trimestre)
-
-### Agência
-- PetPal Manager Agência Digital Ltda
-- Sócios: Natália Cassus e Dr. Pedro Henrique Oliveira
-
-## 🔐 Perfis de Usuário
-
-### Administrador
-- Acesso total ao sistema
-- Gestão de usuários e permissões
-- Configurações da agência
-
-### Financeiro
-- Gestão financeira
-- Aprovação de reembolsos
-- Relatórios financeiros
-
-### Colaborador
-- Dados pessoais
-- Contratos
-- Solicitação de reembolsos
-
-### Cliente (Sócio)
-- Dados da empresa
-- Contratos
-- Histórico de faturas
-
-## 🚧 Funcionalidades Implementadas
-
-### ✅ Concluído
-- [x] Interface moderna com shadcn/ui
-- [x] Sistema de temas claro/escuro
-- [x] Dashboard com estatísticas
-- [x] Gestão de colaboradores
-- [x] Gestão de clientes
-- [x] Gestão de serviços
-- [x] Cadastro da agência
-- [x] Gerenciamento de usuários
-- [x] Dados mockados para teste
-- [x] Design responsivo
-- [x] Efeitos visuais e animações
-
-### 🔄 Em Desenvolvimento
-- [ ] Integração com APIs reais
-- [ ] Sistema de autenticação completo
-- [ ] Validação de CPF/CNPJ via API
-- [ ] Verificação de CRMV
-- [ ] Assinatura digital de contratos
-- [ ] Integração com Cora API
-- [ ] Sistema de backup
-- [ ] Relatórios avançados
-
-## 📱 Responsividade
-
-O sistema é totalmente responsivo e funciona em:
-- **Desktop**: Layout completo com sidebar
-- **Tablet**: Layout adaptado com navegação otimizada
-- **Mobile**: Interface compacta com menu hambúrguer
-
-## 🎯 Próximos Passos
-
-1. **Backend**: Implementação da API REST
-2. **Banco de Dados**: Estrutura PostgreSQL
-3. **Autenticação**: Sistema JWT com MFA
-4. **Integrações**: APIs externas (CPF, CNPJ, CRMV, Cora)
-5. **Documentos**: Sistema de upload e assinatura
-6. **Relatórios**: Geração de PDFs e Excel
-7. **Notificações**: Email e WhatsApp
-8. **Deploy**: Configuração para produção
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
 
 ## 📄 Licença
 
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
-
-## 👥 Contribuição
-
-Contribuições são bem-vindas! Por favor, leia as diretrizes de contribuição antes de submeter pull requests.
+Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
 
 ## 📞 Suporte
 
-Para suporte técnico ou dúvidas sobre o sistema, entre em contato através dos canais oficiais da PetPal Manager.
+Para suporte e dúvidas, entre em contato através do GitHub Issues.
 
 ---
 
-**PetPal Manager** - Transformando a gestão do setor veterinário com tecnologia e inovação. 🐾 
+Desenvolvido com ❤️ pela equipe Pet Pal Manager
