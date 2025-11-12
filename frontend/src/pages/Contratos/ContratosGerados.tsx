@@ -84,7 +84,7 @@ export default function ContratosGerados() {
     const nomeEntidadeMatch = contrato.entidade_nome.toLowerCase().includes(filtroNome.toLowerCase()) || 
                               contrato.template_nome.toLowerCase().includes(filtroNome.toLowerCase());
     const statusMatch = filtroStatus === 'todos' || contrato.status_geral === filtroStatus;
-    const tipoMatch = filtroTipo === 'todos' || contrato.entidade_tipo === filtroTipo;
+    const tipoMatch = filtroTipo === 'todos' || contrato.entidade_id === filtroTipo;
     return nomeEntidadeMatch && statusMatch && tipoMatch;
   });
 
@@ -96,7 +96,7 @@ export default function ContratosGerados() {
     // Se for rascunho, poderia levar de volta para PreencherContrato.tsx ou uma tela de edição específica.
     const contrato = contratos.find(c => c.id === id);
     if (contrato && contrato.status_geral === 'rascunho') {
-        navigate(`/contratos/gerar/preencher?templateId=${contrato.template_id}&entidadeId=${contrato.entidade_id}&tipo=${contrato.entidade_tipo}&contratoId=${id}`);
+        navigate(`/contratos/gerar/preencher?templateId=${contrato.template_id}&entidadeId=${contrato.entidade_id}&tipo=${contrato.entidade_id}&contratoId=${id}`);
     } else {
         alert(`Editar contrato ${id} (apenas rascunhos podem ser editados diretamente aqui)`);
     }
@@ -259,14 +259,14 @@ export default function ContratosGerados() {
                 </p>
                  <Badge 
                     variant="outline"
-                    className={contrato.entidade_tipo === 'cliente' ? 'border-blue-500 text-blue-600' : 'border-purple-500 text-purple-600'}
+                    className={contrato.entidade_id === 'cliente' ? 'border-blue-500 text-blue-600' : 'border-purple-500 text-purple-600'}
                   >
-                     {contrato.entidade_tipo === 'cliente' ? 'Cliente' : 'Colaborador'}
+                     {contrato.entidade_id === 'cliente' ? 'Cliente' : 'Colaborador'}
                   </Badge>
               </CardHeader>
               <CardContent className="flex-grow">
                 <p className="text-xs text-muted-foreground">
-                  Gerado em: {new Date(contrato.data_geracao || contrato.data_criacao || contrato.created_at).toLocaleDateString('pt-BR')}
+                  Gerado em: {new Date(contrato.data_geracao || contrato.created_at).toLocaleDateString('pt-BR')}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Última atualização: {new Date(contrato.updated_at).toLocaleDateString('pt-BR')}

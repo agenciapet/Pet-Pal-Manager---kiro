@@ -186,7 +186,6 @@ export default function PaginaAssinatura() {
                 user_agent: navigator.userAgent,
                 data_assinatura_cliente: new Date().toISOString(), // Data/hora do cliente no momento da assinatura
                 nome_confirmado: nomeAssinante,
-                cpf_confirmado: cpfAssinante,
             };
             // Poderia adicionar aqui o nome digitado se for diferente, ou IP, etc.
             // contratosSalvos[contratoIndex].signatarios[signatarioIndex].nome_confirmado = nomeAssinante;
