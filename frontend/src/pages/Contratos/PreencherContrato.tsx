@@ -91,11 +91,10 @@ export default function PreencherContrato() {
         vars['{COLABORADOR_DATA_CONTRATACAO}'] = new Date(colab.data_contratacao).toLocaleDateString('pt-BR');
         
         signatariosIniciais.push({
-          tipo_parte: 'colaborador',
-          id_parte: colab.id,
+          id: colab.id.toString(),
           nome: colab.nome_completo,
-          email: colab.email || `colaborador+${colab.id}@petpalmanager.com`, // Fallback email único
-          cpf_cnpj: colab.cpf,
+          email: colab.contact_email || `colaborador+${colab.id}@petpalmanager.com`, // Fallback email único
+          tipo: 'colaborador',
           status_assinatura: 'pendente'
         });
       } else if (tipoEntidade === 'cliente' && entidade) {
@@ -114,21 +113,20 @@ export default function PreencherContrato() {
           vars['{CLIENTE_REPRESENTANTE_CARGO}'] = representantePrincipalCliente.cargo;
 
           signatariosIniciais.push({
-            tipo_parte: 'cliente_representante',
-            id_parte: representantePrincipalCliente.id,
+            id: representantePrincipalCliente.id.toString(),
             nome: representantePrincipalCliente.nome_completo,
             email: representantePrincipalCliente.email || `representante+${representantePrincipalCliente.id}@petpalmanager.com`, // Fallback email único
-            cpf_cnpj: representantePrincipalCliente.cpf,
+            tipo: 'cliente',
             status_assinatura: 'pendente'
           });
         } else {
             vars['{CLIENTE_REPRESENTANTE_NOME}'] = '[REPRESENTANTE_PENDENTE]';
             // Adicionar signatário genérico para a empresa se não houver representante específico
             signatariosIniciais.push({
-                tipo_parte: 'empresa_contato_principal',
+                id: cli.id.toString(),
                 nome: cli.razao_social, // Nome da empresa
                 email: cli.email || `contrato+${cli.id}@petpalmanager.com`, // Fallback email único
-                cpf_cnpj: cli.cnpj,
+                tipo: 'cliente',
                 status_assinatura: 'pendente'
               });
         }
@@ -149,11 +147,10 @@ export default function PreencherContrato() {
       // Adiciona sócio da agência como signatário
       if (socioPrincipalAgencia) {
         signatariosIniciais.push({
-            tipo_parte: 'agencia_socio',
-            id_parte: socioPrincipalAgencia.id,
+            id: socioPrincipalAgencia.id.toString(),
             nome: socioPrincipalAgencia.nome_completo,
             email: socioPrincipalAgencia.email || 'contrato@petpalmanager.com', // Fallback email
-            cpf_cnpj: socioPrincipalAgencia.cpf,
+            tipo: 'outros',
             status_assinatura: 'pendente'
         });
       }
@@ -204,7 +201,7 @@ export default function PreencherContrato() {
           template_nome: novoContrato.template_nome,
           entidade_id: novoContrato.entidade_id,
           entidade_nome: novoContrato.entidade_nome,
-          entidade_tipo: novoContrato.entidade_tipo,
+          entidade_tipo: novoContrato.tipo_contrato,
           status_geral: novoContrato.status_geral,
           dados_snapshot: novoContrato.dados_snapshot,
           signatarios: novoContrato.signatarios
@@ -276,7 +273,7 @@ export default function PreencherContrato() {
                         <div key={index} className="p-3 border rounded-md bg-muted/50">
                             <p className="font-semibold text-sm">{signatario.nome}</p>
                             <p className="text-xs text-muted-foreground">{signatario.email}</p>
-                            <p className="text-xs text-muted-foreground uppercase">{signatario.tipo_parte.replace('_', ' ')}</p>
+                            <p className="text-xs text-muted-foreground uppercase">Signatário</p>
                             {/* TODO: Permitir editar/remover signatários */}
                         </div>
                     ))}

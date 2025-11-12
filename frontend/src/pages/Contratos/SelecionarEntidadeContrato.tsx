@@ -51,12 +51,12 @@ export default function SelecionarEntidadeContrato() {
               servicos_contratados: company.services || [],
               email: company.contact_email
             }));
-            setEntidades(clientesFormatados);
+            setEntidades(clientesFormatados as any);
           } catch (apiError) {
             console.warn('API não disponível, usando dados mock para clientes:', apiError);
             // Fallback para mock data se API não estiver disponível
             const { mockClientes } = await import('../../data/mockData');
-            setEntidades(mockClientes.filter(c => c.is_active));
+            setEntidades(mockClientes.filter(c => c.status === 'ativo'));
           }
         } else if (tipoTemplate === 'colaborador') {
           try {
@@ -81,12 +81,12 @@ export default function SelecionarEntidadeContrato() {
                 cep: employee.zip_code
               }
             }));
-            setEntidades(colaboradoresFormatados);
+            setEntidades(colaboradoresFormatados as any);
           } catch (apiError) {
             console.warn('API não disponível, usando dados mock para colaboradores:', apiError);
             // Fallback para mock data se API não estiver disponível
             const { mockColaboradores } = await import('../../data/mockData');
-            setEntidades(mockColaboradores.filter(c => c.is_active));
+            setEntidades(mockColaboradores as any);
           }
         }
       } catch (error) {

@@ -288,7 +288,7 @@ export default function FormUsuario() {
                         >
                           <p className="font-medium">{colaborador.nome_completo}</p>
                           <p className="text-sm text-muted-foreground">
-                            CPF: {colaborador.cpf} | {colaborador.email}
+                            CPF: {colaborador.cpf}
                           </p>
                         </div>
                       ))}
